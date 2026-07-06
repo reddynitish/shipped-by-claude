@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  --color-ink: #0a0e14;
+  --color-panel: #10151f;
+  --color-edge: #1e2735;
+  --color-ship: #3ddc84;
+  --color-dim: #8b98ab;
+}
+
+body {
+  background: var(--color-ink);
+  color: #e6edf3;
+}

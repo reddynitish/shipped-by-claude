@@ -1,0 +1,7 @@
+.env
+node_modules/
+posts.db
+__pycache__/
+dist/
+frontend/dist/
+tunnel.log
