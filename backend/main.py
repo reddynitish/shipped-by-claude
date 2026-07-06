@@ -23,8 +23,17 @@ app.add_middleware(
 
 
 @app.get("/posts")
-def get_posts(page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100)):
-    return {"page": page, "page_size": page_size, "posts": db.get_posts(page, page_size)}
+def get_posts(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    min_stars: int = Query(0, ge=0),
+    sort: str = Query("top", pattern="^(latest|top)$"),
+):
+    return {
+        "page": page,
+        "page_size": page_size,
+        "posts": db.get_posts(page, page_size, min_stars, sort),
+    }
 
 
 @app.post("/refresh")

@@ -46,13 +46,34 @@ def upsert_post(conn: sqlite3.Connection, post: dict) -> bool:
     return existed is None
 
 
-def get_posts(page: int = 1, page_size: int = 20) -> list[dict]:
-    conn = get_conn()
+# HN-style gravity: stars decayed by age. Computed in SQL so LIMIT/OFFSET
+# paginate the ranked set. julianday('now') - julianday(pushed_at) = age in days.
+_HOTNESS = "(CAST(stars AS REAL) / pow(julianday('now') - julianday(pushed_at) + 2, 1.5))"
+
+_ORDER = {
+    "latest": "pushed_at DESC",
+    "top": f"{_HOTNESS} DESC, pushed_at DESC",
+}
+
+
+def get_posts(
+    page: int = 1,
+    page_size: int = 20,
+    min_stars: int = 0,
+    sort: str = "top",
+    conn: sqlite3.Connection | None = None,
+) -> list[dict]:
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
     try:
         rows = conn.execute(
-            "SELECT * FROM posts ORDER BY pushed_at DESC LIMIT ? OFFSET ?",
-            (page_size, (page - 1) * page_size),
+            f"""SELECT * FROM posts WHERE stars >= ?
+                ORDER BY {_ORDER.get(sort, _ORDER['top'])}
+                LIMIT ? OFFSET ?""",
+            (min_stars, page_size, (page - 1) * page_size),
         ).fetchall()
         return [dict(r) for r in rows]
     finally:
-        conn.close()
+        if own_conn:
+            conn.close()

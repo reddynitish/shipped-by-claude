@@ -95,14 +95,25 @@ function Skeleton() {
   );
 }
 
+const STAR_FILTERS = [
+  { label: "All", value: 0 },
+  { label: "10+", value: 10 },
+  { label: "50+", value: 50 },
+  { label: "100+", value: 100 },
+];
+
 export default function App() {
   const [posts, setPosts] = useState(null); // null = loading
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [sort, setSort] = useState("top");
+  const [minStars, setMinStars] = useState(0);
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/posts?page=1&page_size=50`);
+      const res = await fetch(
+        `${API}/posts?page=1&page_size=50&sort=${sort}&min_stars=${minStars}`
+      );
       const data = await res.json();
       setPosts(data.posts);
       setError(null);
@@ -110,7 +121,7 @@ export default function App() {
       setError("Can't reach the backend — is uvicorn running on :8000?");
       setPosts([]);
     }
-  }, []);
+  }, [sort, minStars]);
 
   useEffect(() => {
     load();
@@ -130,17 +141,51 @@ export default function App() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 pb-20">
-      <header className="sticky top-0 z-10 -mx-4 flex items-center gap-3 border-b border-edge bg-ink/90 px-4 py-4 backdrop-blur">
-        <h1 className="font-mono text-lg font-bold">
-          <span className="text-ship">$</span> shipped_by_claude
-        </h1>
-        <button
-          onClick={refresh}
-          disabled={refreshing}
-          className="ml-auto rounded-md border border-ship/50 px-3 py-1.5 font-mono text-sm text-ship transition hover:bg-ship/10 disabled:opacity-50"
-        >
-          {refreshing ? "fetching…" : "↻ Refresh Feed"}
-        </button>
+      <header className="sticky top-0 z-10 -mx-4 border-b border-edge bg-ink/90 px-4 py-3 backdrop-blur">
+        <div className="flex items-center gap-3">
+          <h1 className="font-mono text-lg font-bold">
+            <span className="text-ship">$</span> shipped_by_claude
+          </h1>
+          <button
+            onClick={refresh}
+            disabled={refreshing}
+            className="ml-auto rounded-md border border-ship/50 px-3 py-1.5 font-mono text-sm text-ship transition hover:bg-ship/10 disabled:opacity-50"
+          >
+            {refreshing ? "fetching…" : "↻ Refresh Feed"}
+          </button>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2 font-mono text-xs">
+          <div className="flex overflow-hidden rounded-md border border-edge" role="group" aria-label="sort">
+            {["top", "latest"].map((s) => (
+              <button
+                key={s}
+                onClick={() => setSort(s)}
+                className={
+                  sort === s
+                    ? "bg-ship px-3 py-1 font-semibold text-ink"
+                    : "px-3 py-1 text-dim hover:text-ship"
+                }
+              >
+                {s === "top" ? "Top" : "Latest"}
+              </button>
+            ))}
+          </div>
+          <div className="ml-2 flex gap-1" role="group" aria-label="minimum stars">
+            {STAR_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setMinStars(f.value)}
+                className={
+                  minStars === f.value
+                    ? "rounded-full border border-ship bg-ship/15 px-2.5 py-1 font-semibold text-ship"
+                    : "rounded-full border border-edge px-2.5 py-1 text-dim hover:border-ship/40 hover:text-ship"
+                }
+              >
+                {f.value === 0 ? "All" : `⭐ ${f.label}`}
+              </button>
+            ))}
+          </div>
+        </div>
       </header>
 
       <p className="mt-4 mb-6 font-mono text-xs text-dim">
